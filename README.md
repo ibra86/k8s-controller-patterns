@@ -22,3 +22,9 @@ go build -o controller
 ./controller --log-level debug
 ./controller --log-level trace
 ```
+
+#### 2. Add FastHTTP server
+```bash
+go build -o controller
+./controller server --log-level debug
+```
