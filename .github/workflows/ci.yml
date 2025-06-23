@@ -58,7 +58,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_PAT }}
       - name: Build Docker image
         run: docker build -t ghcr.io/${{ github.repository }}/app:${{ steps.vars.outputs.docker_tag }} .
       - name: Trivy Scan
@@ -67,13 +67,14 @@ jobs:
           image-ref: ghcr.io/${{ github.repository }}/app:${{ steps.vars.outputs.docker_tag }}
       - name: Push Docker image
         run: docker push ghcr.io/${{ github.repository }}/app:${{ steps.vars.outputs.docker_tag }}
-      - name: Package Helm chart
-        run: |
-          helm package charts/app --version ${{ steps.vars.outputs.version }} --app-version ${{ steps.vars.outputs.app_version }}
-          mkdir -p chart-artifacts
-          mv app-${{ steps.vars.outputs.version }}.tgz chart-artifacts/
-      - name: Upload Helm chart artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: helm-chart
-          path: chart-artifacts/ 
+      # - name: Package Helm chart
+      #   run: |
+      #     helm package charts/app --version ${{ steps.vars.outputs.version }} --app-version ${{ steps.vars.outputs.app_version }}
+      #     mkdir -p chart-artifacts
+      #     mv app-${{ steps.vars.outputs.version }}.tgz chart-artifacts/
+      # - name: Upload Helm chart artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: helm-chart
+      #     path: chart-artifacts/
+          
