@@ -14,3 +14,11 @@ go test ./cmd
 go build -o controller
 ./controller go-basic
 ```
+
+#### 2. Add logging
+```bash
+go build -o controller
+./controller --log-level info
+./controller --log-level debug
+./controller --log-level trace
+```
