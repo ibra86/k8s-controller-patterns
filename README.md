@@ -36,11 +36,18 @@ make run ARGS="server --log-level debug" #run with arguments
 make build
 docker run -p 8080:8080 k8s-controller-patterns:latest server --log-level debug
 
-export GITHUB_TOKEN=<GITHUB_TOKEN>
-echo $GITHUB_TOKEN | docker login ghcr.io -u ibra86 --password-stdin
+export GITHUB_PAT=<GITHUB_TOKEN>
+echo $GITHUB_PAT | docker login ghcr.io -u ibra86 --password-stdin
 docker tag <image_tag> ghcr.io/ibra86/k8s-controller-patterns:latest
 
-helm install my-app ./charts/app \
-  --set image.repository=ghcr.io/ibra86/k8s-controller-patterns \
-  --set image.tag=latest
+kubectl create secret docker-registry ghcr-secret \
+  --docker-server=ghcr.io \
+  --docker-username=ibra86 \
+  --docker-password=$GITHUB_PAT \
+  --docker-email=<user-email> \
+  --dry-run=client -o yaml > secret.yaml
+kubectl apply -f secret.yaml
+helm install k8s-controller ./charts/app
+kubectl port-forward service/k8s-controller 8080:80
+curl http://localhost:8080
 ```
