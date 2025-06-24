@@ -1,2 +1,12 @@
 etcd
 kubebuilder
+.vscode
+controller
+secret.yaml
+charts/app/.helmignore
+
+# User-defined scripts to be ignored
+k8s-cp-healthcheck.sh
+my-setup-control-plane.sh
+setup-amd64_0.sh
+

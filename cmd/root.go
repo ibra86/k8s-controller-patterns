@@ -31,8 +31,38 @@ func parseLogLevel(lvl string) zerolog.Level {
 	}
 }
 
-func configureLogger(level zerolog.Level) {
-
+func ConfigureLogger(levelStr string) {
+	level := parseLogLevel(levelStr)
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.SetGlobalLevel(level)
+	if level == zerolog.TraceLevel {
+		zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
+			return fmt.Sprintf("%s:%d", file, line)
+		}
+		zerolog.CallerFieldName = "caller"
+		log.Logger = log.Output(zerolog.ConsoleWriter{
+			Out:        os.Stderr,
+			TimeFormat: "2006-01-02 15:04:05.000",
+			PartsOrder: []string{
+				zerolog.TimestampFieldName,
+				zerolog.LevelFieldName,
+				zerolog.CallerFieldName,
+				zerolog.MessageFieldName,
+			},
+		}).With().Caller().Logger()
+	} else if level == zerolog.DebugLevel {
+		log.Logger = log.Output(zerolog.ConsoleWriter{
+			Out:        os.Stderr,
+			TimeFormat: "2006-01-02 15:04:05.000",
+			PartsOrder: []string{
+				zerolog.TimestampFieldName,
+				zerolog.LevelFieldName,
+				zerolog.MessageFieldName,
+			},
+		})
+	} else {
+		log.Logger = log.Output(os.Stderr)
+	}
 }
 
 var logLevel string
@@ -42,38 +72,8 @@ var rootCmd = &cobra.Command{
 	Use:   "k8s-controller-patterns",
 	Short: "logging",
 	Run: func(cmd *cobra.Command, args []string) {
-		level := parseLogLevel(logLevel)
-		// configureLogger(level)
-		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-		zerolog.SetGlobalLevel(level)
-		if level == zerolog.TraceLevel {
-			zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
-				return fmt.Sprintf("%s:%d", file, line)
-			}
-			zerolog.CallerFieldName = "caller"
-			log.Logger = log.Output(zerolog.ConsoleWriter{
-				Out:        os.Stderr,
-				TimeFormat: "2006-01-02 15:04:05.000",
-				PartsOrder: []string{
-					zerolog.TimestampFieldName,
-					zerolog.LevelFieldName,
-					zerolog.CallerFieldName,
-					zerolog.MessageFieldName,
-				},
-			}).With().Caller().Logger()
-		} else if level == zerolog.DebugLevel {
-			log.Logger = log.Output(zerolog.ConsoleWriter{
-				Out:        os.Stderr,
-				TimeFormat: "2006-01-02 15:04:05.000",
-				PartsOrder: []string{
-					zerolog.TimestampFieldName,
-					zerolog.LevelFieldName,
-					zerolog.MessageFieldName,
-				},
-			})
-		} else {
-			log.Logger = log.Output(os.Stderr)
-		}
+		ConfigureLogger(logLevel)
+
 		log.Info().Msg("info log")
 		log.Debug().Msg("info log")
 		log.Trace().Msg("info log")
