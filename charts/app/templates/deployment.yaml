@@ -19,6 +19,9 @@ spec:
           ports:
             - containerPort: {{ .Values.containerPort }}
           args: {{ toJson .Values.args }}
-          # Uncomment if using private registry
-          # imagePullSecrets:
-          #   - name: ghcr-secret
+      tolerations:
+      - key: "node.cloudprovider.kubernetes.io/uninitialized"
+        operator: "Exists"
+        effect: "NoSchedule"
+      imagePullSecrets:
+        - name: ghcr-secret

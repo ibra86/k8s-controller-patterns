@@ -38,7 +38,6 @@ docker run -p 8080:8080 k8s-controller-patterns:latest server --log-level debug
 
 export GITHUB_PAT=<GITHUB_TOKEN>
 echo $GITHUB_PAT | docker login ghcr.io -u ibra86 --password-stdin
-docker tag <image_tag> ghcr.io/ibra86/k8s-controller-patterns:latest
 
 kubectl create secret docker-registry ghcr-secret \
   --docker-server=ghcr.io \
@@ -47,7 +46,13 @@ kubectl create secret docker-registry ghcr-secret \
   --docker-email=<user-email> \
   --dry-run=client -o yaml > secret.yaml
 kubectl apply -f secret.yaml
-helm install k8s-controller ./charts/app
-kubectl port-forward service/k8s-controller 8080:80
+helm install k8s-controllers ./charts/app
+kubectl port-forward service/k8s-controllers 8080:80
 curl http://localhost:8080
+```
+
+#### 4. client-go api
+```bash
+# list deployments
+go run main.go list --log-level debug --kubeconfig ~/.kube/config--log-level debug
 ```
