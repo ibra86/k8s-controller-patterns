@@ -94,14 +94,20 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
-      - name: Build Docker image
-        run: docker build -t ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.docker_tag }} .
+      - name: Build Docker image with version and latest tags
+        run: |
+          docker build \
+            -t ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.docker_tag }} \
+            -t ghcr.io/${{ github.repository }}:latest \
+            .
       - name: Trivy Scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.docker_tag }}
       - name: Push Docker image
-        run: docker push ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.docker_tag }}
+        run: |
+          docker push ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.docker_tag }}
+          docker push ghcr.io/${{ github.repository }}:latest
       - name: Package Helm chart
         run: |
           helm package charts/app --version ${{ steps.vars.outputs.version }} --app-version ${{ steps.vars.outputs.app_version }}
