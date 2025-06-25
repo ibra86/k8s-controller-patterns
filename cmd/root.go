@@ -10,7 +10,6 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-
 	"github.com/spf13/cobra"
 )
 
@@ -66,11 +65,12 @@ func ConfigureLogger(levelStr string) {
 }
 
 var logLevel string
+var appVersion = "dev"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "k8s-controller-patterns",
-	Short: "logging",
+	Short: "app version: " + appVersion,
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureLogger(logLevel)
 
