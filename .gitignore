@@ -4,6 +4,7 @@ kubebuilder
 controller
 secret.yaml
 charts/app/.helmignore
+__debug*
 
 # User-defined scripts to be ignored
 my1_setup-amd64_0

@@ -2,15 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "feature/**", "day*/**" ]
+    branches: ["main", "feature/**", "day*/**"]
     paths:
-      - '**.go'
-      - '**.mod'
-      - '**.sum'
-      - 'charts/**'
-      - 'cmd/**'
-      - 'pkg/**'
-      - '.github/workflows/ci.yml'
+      - "**.go"
+      - "**.mod"
+      - "**.sum"
+      - "charts/**"
+      - "cmd/**"
+      - "pkg/**"
+      - ".github/workflows/ci.yml"
   # pull_request:
   #   branches: [ "main", "feature/**", "day*/**" ]
   #   paths:
@@ -32,10 +32,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.2'
+          go-version: "1.24.2"
 
       - name: Lint (go vet)
-        run: go vet ./cmd/...
+        run: go vet ./...
 
       - name: Lint (golangci-lint)
         uses: golangci/golangci-lint-action@v3
@@ -52,7 +52,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.2'
+          go-version: "1.24.2"
 
       - name: Install setup-envtest
         run: go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
@@ -73,7 +73,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.2'
+          go-version: "1.24.2"
       - name: Set version
         id: vars
         run: |
@@ -126,4 +126,3 @@ jobs:
         with:
           name: helm-chart
           path: chart-artifacts/
-          
