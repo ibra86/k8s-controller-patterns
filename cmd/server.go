@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ibra86/k8s-controller-patterns/pkg/informer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/valyala/fasthttp"
-	"github.com/ibra86/k8s-controller-patterns/pkg/informer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -29,7 +29,7 @@ func getServerKubeClient(kubeconfigPath string, inCluster bool) (*kubernetes.Cli
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return kubernetes.NewForConfig(config)
 }
 
@@ -41,11 +41,12 @@ var serverCmd = &cobra.Command{
 
 		clientset, err := getServerKubeClient(serverKubeconfig, serverInCluster)
 		if err != nil {
-			//
+			log.Error().Err(err).Msg("Failed to create Kubernetes client")
+			os.Exit(1)
 		}
 		ctx := context.Background()
 		go informer.StartDeploymentInformer(ctx, clientset)
-		
+
 		handler := func(ctx *fasthttp.RequestCtx) {
 			log.Info().
 				Str("method", string(ctx.Method())).
@@ -53,7 +54,10 @@ var serverCmd = &cobra.Command{
 				Str("remoteAddr", ctx.RemoteAddr().String()).
 				Msg("Incoming HTTP request")
 
-			fmt.Fprintf(ctx, "hello from FastHTTP")
+			if _, err := fmt.Fprintf(ctx, "hello from FastHTTP"); err != nil {
+				log.Printf("failed to write response: %v", err)
+			}
+
 		}
 
 		addr := fmt.Sprintf(":%d", serverPort)

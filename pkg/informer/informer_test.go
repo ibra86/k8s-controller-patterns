@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -61,13 +62,16 @@ func TestStartDeploymentInformer(t *testing.T) {
 		informers.WithNamespace("default"),
 	)
 	informer := factory.Apps().V1().Deployments().Informer()
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err := informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj any) {
 			if d, ok := obj.(metav1.Object); ok {
 				added <- d.GetName()
 			}
 		},
 	})
+	if err != nil {
+		log.Error().Msgf("failed to register event handler: %v", err)
+	}
 
 	go func() {
 		defer wg.Done()

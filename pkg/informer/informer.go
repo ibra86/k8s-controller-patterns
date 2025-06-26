@@ -31,7 +31,7 @@ func StartDeploymentInformer(ctx context.Context, clientset *kubernetes.Clientse
 	)
 	informer := factory.Apps().V1().Deployments().Informer()
 
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err := informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			log.Info().Msgf("Deployment added: %s", getDeploymentName(obj))
 		},
@@ -42,6 +42,9 @@ func StartDeploymentInformer(ctx context.Context, clientset *kubernetes.Clientse
 			log.Info().Msgf("Deployment deleted: %s", getDeploymentName(obj))
 		},
 	})
+	if err != nil {
+		log.Error().Msgf("failed to register event handler: %v", err)
+	}
 
 	log.Info().Msg("Starting deployment informer...")
 	factory.Start(ctx.Done())

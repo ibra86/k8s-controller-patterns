@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestAddNewUser(t *testing.T) {
@@ -33,7 +35,7 @@ func TestGetUsers(t *testing.T) {
 	os.Stdout = w
 
 	k8s.GetUsers()
-	w.Close()
+	require.NoError(t, w.Close())
 	os.Stdout = old
 
 	var buf bytes.Buffer

@@ -34,6 +34,8 @@ func ConfigureLogger(levelStr string) {
 	level := parseLogLevel(levelStr)
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.SetGlobalLevel(level)
+
+	//nolint:staticcheck // QF1003: prefer if-else for
 	if level == zerolog.TraceLevel {
 		zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
 			return fmt.Sprintf("%s:%d", file, line)
