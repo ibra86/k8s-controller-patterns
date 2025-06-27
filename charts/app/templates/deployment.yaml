@@ -13,12 +13,18 @@ spec:
         app: {{ .Release.Name }}
     spec:
       containers:
-        - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - containerPort: {{ .Values.containerPort }}
+        - name: {{ .Values.image.containerName }}
+          image: {{ .Values.image.repository }}:latest
+          imagePullPolicy: IfNotPresent
+          # args: ["server", "--log-level", "debug"]
+          {{- if .Values.args }}
           args: {{ toJson .Values.args }}
-          # Uncomment if using private registry
-          # imagePullSecrets:
-          #   - name: ghcr-secret
+          {{- end }}
+          # ports:
+          #   - containerPort: 8080  # it's a metadata only
+      tolerations:
+      - key: "node.cloudprovider.kubernetes.io/uninitialized"
+        operator: "Exists"
+        effect: "NoSchedule"
+      imagePullSecrets:
+        - name: ghcr-secret

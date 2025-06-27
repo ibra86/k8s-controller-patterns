@@ -6,7 +6,7 @@ secret.yaml
 charts/app/.helmignore
 
 # User-defined scripts to be ignored
-k8s-cp-healthcheck.sh
-my-setup-control-plane.sh
-setup-amd64_0.sh
+my1_setup-amd64_0
+my2_setup_controlplane
+my3_healthcheck_k8s_cp
 
