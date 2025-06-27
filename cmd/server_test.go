@@ -17,6 +17,13 @@ func TestServerCommand(t *testing.T) {
 	}
 }
 
+func TestGetServerKubeClient_InvalidPath(t *testing.T) {
+	_, err := getServerKubeClient("/invalid/path", false)
+	if err == nil {
+		t.Error("expected error for invalid kubeconfig path")
+	}
+}
+
 // import (
 // 	"bytes"
 // 	"errors"

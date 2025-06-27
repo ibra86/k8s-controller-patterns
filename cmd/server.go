@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/ibra86/k8s-controller-patterns/pkg/informer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -54,8 +55,31 @@ var serverCmd = &cobra.Command{
 				Str("remoteAddr", ctx.RemoteAddr().String()).
 				Msg("Incoming HTTP request")
 
-			if _, err := fmt.Fprintf(ctx, "hello from FastHTTP"); err != nil {
-				log.Printf("failed to write response: %v", err)
+			requestID := uuid.New().String()
+			ctx.Response.Header.Set("X-Request-ID", requestID)
+			logger := log.With().Str("request_id", requestID).Logger()
+			switch string(ctx.Path()) {
+			case "/deployments":
+				logger.Info().Msg("Deployments request received")
+				ctx.Response.Header.Set("Content-Type", "application/json")
+				deployments := informer.GetDeploymentNames()
+				logger.Info().Msgf("Deployments: %v", deployments)
+				ctx.SetStatusCode(200)
+				_, _ = ctx.Write([]byte("["))
+				for i, name := range deployments {
+					_,_ = ctx.WriteString("\"")
+					_,_ = ctx.WriteString(name)
+					_,_ = ctx.WriteString("\"")
+					if i < len(deployments)-1 {
+						_,_ = ctx.WriteString(",")
+					}
+				}
+				_,_ = ctx.Write([]byte("]"))
+			default:
+				logger.Info().Msg("Default request received")
+				if _, err := fmt.Fprintf(ctx, "hello from FastHTTP"); err != nil {
+					log.Printf("failed to write response: %v", err)
+				}
 			}
 
 		}

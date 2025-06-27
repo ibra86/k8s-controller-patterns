@@ -36,9 +36,9 @@ make run ARGS="server --log-level debug" #run with arguments
 make build
 docker run -p 8080:8080 k8s-controller-patterns:latest server --log-level debug
 
+# if private container-registry
 export GITHUB_PAT=<GITHUB_TOKEN>
 echo $GITHUB_PAT | docker login ghcr.io -u ibra86 --password-stdin
-
 kubectl create secret docker-registry ghcr-secret \
   --docker-server=ghcr.io \
   --docker-username=ibra86 \
@@ -46,6 +46,10 @@ kubectl create secret docker-registry ghcr-secret \
   --docker-email=<user-email> \
   --dry-run=client -o yaml > secret.yaml
 kubectl apply -f secret.yaml
+
+#if publich container-
+sudo kubebuilder/bin/kubectl taint nodes $(hostname) node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule
+
 
 # alternative with kubectl
 kubectl create deployment k8s-controllers --image=ghcr.io/ibra86/k8s-controller-patterns:latest
@@ -70,4 +74,13 @@ curl http://localhost:8080
 ```bash
 # list deployments
 go run main.go list --log-level debug --kubeconfig ~/.kube/config --log-level debug
+
+# informer deployments change
+go run main.go server --log-level trace --kubeconfig ~/.kube/config 
+
+
+# api endpoint to list deployments
+go run main.go list --log-level debug --kubeconfig ~/.kube/config --log-level 
+curl http://localhost:8080/deployments
 ```
+
