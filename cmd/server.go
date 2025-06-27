@@ -64,7 +64,7 @@ var serverCmd = &cobra.Command{
 		go func() {
 			log.Info().Msg("Starting controller-runtime manager...")
 			if err := mgr.Start(cmd.Context()); err != nil {
-				log.Error().Err(err).Msg("Failed to add deployment controller")
+				log.Error().Err(err).Msg("Manager exited with error")
 				os.Exit(1)
 			}
 

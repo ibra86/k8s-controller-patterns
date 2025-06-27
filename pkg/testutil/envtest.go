@@ -5,15 +5,23 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
+
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func int32Ptr(i int32) *int32 { return &i }
@@ -83,4 +91,61 @@ func SetupEnv(t *testing.T) (*envtest.Environment, *kubernetes.Clientset, func()
 		_ = env.Stop()
 	}
 	return env, clientset, cleanup
+}
+
+func StartTestManager(t *testing.T) (
+	mgr manager.Manager,
+	k8sClient client.Client,
+	restCfg *rest.Config,
+	cleanup func(),
+) {
+	t.Helper()
+	testScheme := runtime.NewScheme()
+
+	require.NoError(t, scheme.AddToScheme(testScheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(testScheme))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	env := &envtest.Environment{
+		ErrorIfCRDPathMissing:    true,
+		AttachControlPlaneOutput: false,
+	}
+	var startErr = make(chan error)
+	var cfg *rest.Config
+	var err error
+
+	go func() {
+		cfg, err = env.Start()
+		startErr <- err
+	}()
+
+	select {
+	case err := <-startErr:
+		require.NoError(t, err, "Failed to start test environemt")
+	case <-ctx.Done():
+		t.Fatal("timeout waiting for test environment to start")
+	}
+
+	require.NotNil(t, cfg)
+
+	mgr, err = manager.New(
+		cfg,
+		manager.Options{Scheme: testScheme, LeaderElection: false},
+	)
+
+	ctx, cancel = context.WithCancel(context.Background())
+	go func() {
+		_ = mgr.Start(ctx)
+	}()
+
+	k8sClient = mgr.GetClient()
+
+	cleanup = func() {
+		cancel()
+		_ = env.Stop()
+	}
+
+	return mgr, k8sClient, cfg, cleanup
 }
