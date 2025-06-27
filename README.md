@@ -47,7 +47,7 @@ kubectl create secret docker-registry ghcr-secret \
   --dry-run=client -o yaml > secret.yaml
 kubectl apply -f secret.yaml
 
-#if publich container-
+#if publich container
 sudo kubebuilder/bin/kubectl taint nodes $(hostname) node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule
 
 
@@ -63,7 +63,6 @@ kubectl patch deployment k8s-controllers \
 kubectl port-forward service/k8s-controllers 8080:80& # temp fwd port to a pod
 kubectl logs -f <pod-id> -c k8s-controller-patterns
 
-
 # alternative with helm
 helm install k8s-controllers ./charts/app --set args="{server,--log-level,debug}"
 kubectl port-forward service/k8s-controllers 8080:80& # temp fwd port to a pod
@@ -78,9 +77,13 @@ go run main.go list --log-level debug --kubeconfig ~/.kube/config --log-level de
 # informer deployments change
 go run main.go server --log-level trace --kubeconfig ~/.kube/config 
 
-
 # api endpoint to list deployments
 go run main.go list --log-level debug --kubeconfig ~/.kube/config --log-level 
 curl http://localhost:8080/deployments
 ```
 
+#### 4. controller-runtime manager and controller
+```bash
+# deployment reconciliation and leader-election
+go run main.go server --log-level trace --kubeconfig ~/.kube/config --enable-leader-election=false --metrics-port=9090
+```
