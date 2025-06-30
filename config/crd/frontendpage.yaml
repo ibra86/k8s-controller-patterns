@@ -1,0 +1,9 @@
+apiVersion: frontendpage.ibra86.io/v1alpha1
+kind: FrontendPage
+metadata:
+  name: testpage
+  namespace: default
+spec:
+  image: nginx:latest
+  contents: test frontend page
+  replicas: 1
