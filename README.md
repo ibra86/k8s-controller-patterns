@@ -7,19 +7,16 @@
 ![Last Commit](https://img.shields.io/github/last-commit/ibra86/k8s-controller-patterns)
 
 ## About
+
 A lightweight Kubernetes controller project built in Go, enabling interaction with Kubernetes resources through a custom HTTP API and Kubernetes-native reconciliation logic.
 
 This project demonstrates advanced controller patterns including:
 
-Dynamic reconciliation with controller-runtime
-
-Custom Resource Definitions (CRDs) via controller-gen
-
-Integration with client-go for listing and watching resources
-
-HTTP-based API server for interacting with cluster state
-
-CI/CD-ready container image builds and Helm-based deployments
+- Dynamic reconciliation with `controller-runtime`
+- Custom Resource Definitions (CRDs) via `controller-gen`
+- Integration with `client-go` for listing and watching resources
+- HTTP-based API server for interacting with cluster state
+- CI/CD-ready container image builds and Helm-based deployments
 
 ---
 
