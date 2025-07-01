@@ -80,7 +80,7 @@ func buildDeployment(page *frontendv1alpha1.FrontendPage) *appsv1.Deployment {
 func (r *FrontendPageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var page frontendv1alpha1.FrontendPage
 	err := r.Get(ctx, req.NamespacedName, &page)
-	if err != nil {
+	if err != nil { // also built-in garbage collector can do it automatically - here is just an explanation
 		if client.IgnoreNotFound(err) == nil {
 			log.Info().Msgf("FrontendPage deleted: %s, %s", req.Name, req.Namespace)
 			var cm corev1.ConfigMap
@@ -128,7 +128,12 @@ func (r *FrontendPageReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	var existingDep appsv1.Deployment
 
 	if err := r.Get(ctx, req.NamespacedName, &existingDep); err != nil {
-		//
+		if !errors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+		if err := r.Create(ctx, dep); err != nil {
+			return ctrl.Result{}, err
+		}
 	} else {
 		updated := false
 
