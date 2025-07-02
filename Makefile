@@ -14,7 +14,12 @@ build:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build $(BUILD_FLAGS) main.go
 
 test:
-	go test ./cmd
+	go test ./...
+vet:
+	go vet ./...
+lint:
+	golangci-lint run
+check: test vet lint
 
 run:
 	go run main.go $(ARGS)

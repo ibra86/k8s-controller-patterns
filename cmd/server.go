@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/buaazp/fasthttprouter"
 	"github.com/go-logr/zerologr"
-	"github.com/google/uuid"
+	_ "github.com/ibra86/k8s-controller-patterns/docs"
+	"github.com/ibra86/k8s-controller-patterns/pkg/api"
 	"github.com/ibra86/k8s-controller-patterns/pkg/ctrl"
 	"github.com/ibra86/k8s-controller-patterns/pkg/informer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/valyala/fasthttp"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -108,47 +112,55 @@ var serverCmd = &cobra.Command{
 			}
 		}()
 
-		handler := func(ctx *fasthttp.RequestCtx) {
-			log.Info().
-				Str("method", string(ctx.Method())).
-				Str("path", string(ctx.Path())).
-				Str("remoteAddr", ctx.RemoteAddr().String()).
-				Msg("Incoming HTTP request")
+		// API router
+		router := fasthttprouter.New()
+		frontendAPI := &api.FrontendPageAPI{
+			K8sClient: mgr.GetClient(),
+			Namespace: "default",
+		}
+		router.GET("/", func(ctx *fasthttp.RequestCtx) {
+			fmt.Fprintf(ctx, "hello from FastHTTP")
+		})
+		router.GET("/api/frontendpages", frontendAPI.ListFrontendPages)
+		router.POST("/api/frontendpages", frontendAPI.CreateFrontendPage)
+		router.GET("/api/frontendpages/:name", frontendAPI.GetFrontendPage)
+		router.PUT("/api/frontendpages/:name", frontendAPI.UpdateFrontendPage)
+		router.DELETE("/api/frontendpages", frontendAPI.DeleteFrontendPage)
 
-			requestID := uuid.New().String()
-			ctx.Response.Header.Set("X-Request-ID", requestID)
-			logger := log.With().Str("request_id", requestID).Logger()
-			switch string(ctx.Path()) {
-			case "/deployments":
-				logger.Info().Msg("Deployments request received")
-				ctx.Response.Header.Set("Content-Type", "application/json")
-				deployments := informer.GetDeploymentNames()
-				logger.Info().Msgf("Deployments: %v", deployments)
-				ctx.SetStatusCode(200)
-				_, _ = ctx.Write([]byte("["))
-				for i, name := range deployments {
-					_, _ = ctx.WriteString("\"")
-					_, _ = ctx.WriteString(name)
-					_, _ = ctx.WriteString("\"")
-					if i < len(deployments)-1 {
-						_, _ = ctx.WriteString(",")
-					}
-				}
-				_, _ = ctx.Write([]byte("]"))
-				return
-			default:
-				logger.Info().Msg("Default request received")
-				if _, err := fmt.Fprintf(ctx, "hello from FastHTTP"); err != nil {
-					log.Printf("failed to write response: %v", err)
+		router.GET(
+			"/swagger/*any",
+			fasthttpadaptor.NewFastHTTPHandler(
+				httpSwagger.Handler(
+					httpSwagger.URL("swagger/doc.json"),
+				),
+			),
+		)
+
+		// legacy endpoint for deployments
+		handler := func(ctx *fasthttp.RequestCtx) {
+			log.Info().Msg("Deployments request received")
+			ctx.Response.Header.Set("Content-Type", "application/json")
+			deployments := informer.GetDeploymentNames()
+			log.Info().Msgf("Deployments: %v", deployments)
+			ctx.SetStatusCode(200)
+			_, _ = ctx.Write([]byte("["))
+			for i, name := range deployments {
+				_, _ = ctx.WriteString("\"")
+				_, _ = ctx.WriteString(name)
+				_, _ = ctx.WriteString("\"")
+				if i < len(deployments)-1 {
+					_, _ = ctx.WriteString(",")
 				}
 			}
-
+			_, _ = ctx.Write([]byte("]"))
+			return
 		}
+		router.GET("/deployments", handler)
 
 		addr := fmt.Sprintf(":%d", serverPort)
 		log.Info().Msgf("Starting FastHTTP server on %s (version: %s)", addr, appVersion)
 
-		if err := fasthttp.ListenAndServe(addr, handler); err != nil {
+		if err := fasthttp.ListenAndServe(addr, router.Handler); err != nil {
 			log.Error().Err(err).Msg("Error starting FastHTTP server")
 			os.Exit(1)
 		}
