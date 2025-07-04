@@ -169,13 +169,14 @@ controller-gen crd:crdVersions=v1 paths=./pkg/apis/... output:crd:dir=./config/c
 # create CRD
 kubectl port-forward service/k8s-controllers 8080:80& # temp fwd port to a pod
 apply -f config/crd/frontendpage.ibra86.io_frontendpages.yaml
-go run main.go server --log-level trace --kubeconfig  ~/.kube/config
-kubectl apply -f ./config/crd/frontendpage.yaml
 
+go run main.go server --log-level trace --kubeconfig  ~/.kube/config
+
+kubectl apply -f ./config/crd/frontendpage.yaml
 kubectl patch frontendpage testpage --type=merge -p '{"spec": {"replicas": 3}}'
 kubectl scale --replicas=2 deployment/testpage # not be applied - according to the state of reconcile.loop
 kubectl delete deploy testpage   # won't be applied
 
 # swagger
-http://localhost:8080/swagger/index.html
+curl http://localhost:8080/swagger/index.html
 ```
