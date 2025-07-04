@@ -31,7 +31,7 @@ type FrontendPageListDoc struct {
 	Items []FrontendPageDoc `json:"items"`
 }
 
-// ListFrontendPage godoc
+// ListFrontendPages godoc
 // @Summary List all FrontendPages
 // @Description Get all FrontendPage resources
 // @Tags frontendpages
@@ -116,7 +116,6 @@ func (api *FrontendPageAPI) CreateFrontendPage(ctx *fasthttp.RequestCtx) {
 	}
 	ctx.SetStatusCode(fasthttp.StatusCreated)
 	ctx.SetContentType("application/json")
-	json.NewEncoder(ctx).Encode(obj)
 	if err := json.NewEncoder(ctx).Encode(obj); err != nil {
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		ctx.SetBodyString(`{"error": "failed to encode JSON"}`)
@@ -202,10 +201,10 @@ func (api *FrontendPageAPI) DeleteFrontendPage(ctx *fasthttp.RequestCtx) {
 		},
 	}
 
-	ctx.SetContentType("application/json")
 	if err := api.K8sClient.Delete(context.Background(), obj); err != nil {
 		ctx.SetStatusCode(fasthttp.StatusNotFound)
 		ctx.SetBodyString(fmt.Sprintf(`{"error": "%v"}`, err))
 		return
 	}
+	ctx.SetStatusCode(fasthttp.StatusNoContent)
 }

@@ -119,13 +119,13 @@ var serverCmd = &cobra.Command{
 			Namespace: "default",
 		}
 		router.GET("/", func(ctx *fasthttp.RequestCtx) {
-			fmt.Fprintf(ctx, "hello from FastHTTP")
+			_, _ = fmt.Fprintf(ctx, "hello from FastHTTP")
 		})
 		router.GET("/api/frontendpages", frontendAPI.ListFrontendPages)
 		router.POST("/api/frontendpages", frontendAPI.CreateFrontendPage)
 		router.GET("/api/frontendpages/:name", frontendAPI.GetFrontendPage)
 		router.PUT("/api/frontendpages/:name", frontendAPI.UpdateFrontendPage)
-		router.DELETE("/api/frontendpages", frontendAPI.DeleteFrontendPage)
+		router.DELETE("/api/frontendpages/:name", frontendAPI.DeleteFrontendPage)
 
 		router.GET(
 			"/swagger/*any",
@@ -153,7 +153,6 @@ var serverCmd = &cobra.Command{
 				}
 			}
 			_, _ = ctx.Write([]byte("]"))
-			return
 		}
 		router.GET("/deployments", handler)
 

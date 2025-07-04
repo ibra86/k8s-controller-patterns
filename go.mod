@@ -5,12 +5,14 @@ go 1.24.3
 require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/go-logr/zerologr v1.2.3
+	github.com/google/uuid v1.6.0
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.4
 	github.com/valyala/fasthttp v1.62.0
+	github.com/valyala/fasthttprouter v0.0.0-20160217050331-24073dd8f323
 	k8s.io/api v0.33.2
 	k8s.io/apiextensions-apiserver v0.33.0
 	k8s.io/apimachinery v0.33.2
@@ -39,7 +41,6 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
