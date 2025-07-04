@@ -1,22 +1,15 @@
-name: Auto Release
+name: Main
 
 on:
   push:
     tags:
-      - "v*"
-
-permissions:
-  contents: write  # required for release
+      - "v*.*.*"
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          generate_release_notes: true
-          token: ${{ secrets.GHCR_PAT }}
+      - name: Release
+        uses: softprops/action-gh-release@v2
