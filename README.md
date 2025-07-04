@@ -62,6 +62,7 @@ k8s-controller-patterns/
 ## Steps of implementations
 
 #### 0. Set-up control plane in Codespace via script
+
 ```bash
 ./setup-amd64.sh start
 ./setup-amd64.sh stop
@@ -69,6 +70,7 @@ k8s-controller-patterns/
 ```
 
 #### 1. Add go basics + test
+
 ```bash
 go run main.go go-basic
 go test ./cmd
@@ -77,6 +79,7 @@ go build -o controller
 ```
 
 #### 2. Add logging
+
 ```bash
 go build -o controller
 ./controller --log-level info
@@ -85,17 +88,22 @@ go build -o controller
 ```
 
 #### 2. Add FastHTTP server
+
 ```bash
 go build -o controller
 ./controller server --log-level debug
 ```
 
 #### 3. Add CI-CD
+
 ```bash
 make run #default run
 make run ARGS="server --log-level debug" #run with arguments
 make build
 docker run -p 8080:8080 k8s-controller-patterns:latest server --log-level debug
+
+export KUBECONFIG=~/.kube/config
+export KUBEBUILDER_ASSETS=$(pwd)/kubebuilder/bin
 
 # if private container-registry
 export GITHUB_PAT=<GITHUB_TOKEN>
@@ -131,25 +139,28 @@ curl http://localhost:8080
 ```
 
 #### 4. client-go api
+
 ```bash
 # list deployments
 go run main.go list --log-level debug --kubeconfig ~/.kube/config --log-level debug
 
 # informer deployments change
-go run main.go server --log-level trace --kubeconfig ~/.kube/config 
+go run main.go server --log-level trace --kubeconfig ~/.kube/config
 
 # api endpoint to list deployments
-go run main.go list --log-level debug --kubeconfig ~/.kube/config --log-level 
+go run main.go list --log-level debug --kubeconfig ~/.kube/config --log-level
 curl http://localhost:8080/deployments
 ```
 
-#### 4. controller-runtime manager and controller
+#### 5. controller-runtime manager and controller
+
 ```bash
 # deployment reconciliation and leader-election
 go run main.go server --log-level trace --kubeconfig ~/.kube/config --enable-leader-election=false --metrics-port=9090
 ```
 
-#### 4. frontend-page controller
+#### 6. frontend-page controller
+
 ```bash
 # install controller-gen -- tool to generate CRD and deepcopy code
 go install sigs.k8s.io/controller-tools/cmd/controller-gen@latest
@@ -158,10 +169,14 @@ controller-gen crd:crdVersions=v1 paths=./pkg/apis/... output:crd:dir=./config/c
 # create CRD
 kubectl port-forward service/k8s-controllers 8080:80& # temp fwd port to a pod
 apply -f config/crd/frontendpage.ibra86.io_frontendpages.yaml
-go run main.go --log-level trace --kubeconfig  ~/.kube/config server
-kubectl apply -f ./config/crd/frontendpage.yaml
 
+go run main.go server --log-level trace --kubeconfig  ~/.kube/config
+
+kubectl apply -f ./config/crd/frontendpage.yaml
 kubectl patch frontendpage testpage --type=merge -p '{"spec": {"replicas": 3}}'
 kubectl scale --replicas=2 deployment/testpage # not be applied - according to the state of reconcile.loop
 kubectl delete deploy testpage   # won't be applied
+
+# swagger
+curl http://localhost:8080/swagger/index.html
 ```
