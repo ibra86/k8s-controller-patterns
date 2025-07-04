@@ -32,9 +32,9 @@ var goBasicCmd = &cobra.Command{
 	Short: "Run golang basic code",
 	Run: func(cmd *cobra.Command, args []string) {
 		k8s := Kubernetes{
-			Name: "k8s-demo-cluster",
+			Name:    "k8s-demo-cluster",
 			Version: "1.31",
-			Users: []string{"alex", "den", "antonio"},
+			Users:   []string{"alex", "den", "antonio"},
 			NodeNumber: func() int {
 				return 10
 			},
@@ -42,7 +42,7 @@ var goBasicCmd = &cobra.Command{
 		k8s.GetUsers()
 		k8s.AddNewUser("anonymous")
 		k8s.GetUsers()
-		
+
 	},
 }
 

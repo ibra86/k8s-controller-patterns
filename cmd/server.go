@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-logr/zerologr"
 	"github.com/google/uuid"
 	"github.com/ibra86/k8s-controller-patterns/pkg/ctrl"
 	"github.com/ibra86/k8s-controller-patterns/pkg/informer"
@@ -15,8 +16,14 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	frontendv1alpha1 "github.com/ibra86/k8s-controller-patterns/pkg/apis/frontend/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 var serverPort int
@@ -47,6 +54,20 @@ var serverCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureLogger(logLevel)
 
+		logf.SetLogger(zap.New(zap.UseDevMode(true)))
+		logf.SetLogger(zerologr.New(&log.Logger))
+
+		scheme := runtime.NewScheme()
+		if err := clientgoscheme.AddToScheme(scheme); err != nil {
+			log.Error().Err(err).Msg("Failed to add client-go scheme")
+			os.Exit(1)
+		}
+
+		if err := frontendv1alpha1.AddToScheme(scheme); err != nil {
+			log.Error().Err(err).Msg("Failed to add FrontendPage scheme")
+			os.Exit(1)
+		}
+
 		clientset, err := getServerKubeClient(serverKubeconfig, serverInCluster)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to create Kubernetes client")
@@ -58,6 +79,7 @@ var serverCmd = &cobra.Command{
 		mgr, err := ctrlruntime.NewManager(
 			ctrlruntime.GetConfigOrDie(),
 			manager.Options{
+				Scheme:                  scheme,
 				LeaderElection:          enableLeaderElection,
 				LeaderElectionID:        "k8s-controllers-leader-election",
 				LeaderElectionNamespace: leaderElectionNamespace,
@@ -70,6 +92,10 @@ var serverCmd = &cobra.Command{
 		}
 		if err := ctrl.AddDeploymentController(mgr); err != nil {
 			log.Error().Err(err).Msg("Failed to add deployment controller")
+			os.Exit(1)
+		}
+		if err := ctrl.AddFrontendController(mgr); err != nil {
+			log.Error().Err(err).Msg("Failed to add frontend controller")
 			os.Exit(1)
 		}
 
@@ -109,6 +135,7 @@ var serverCmd = &cobra.Command{
 					}
 				}
 				_, _ = ctx.Write([]byte("]"))
+				return
 			default:
 				logger.Info().Msg("Default request received")
 				if _, err := fmt.Fprintf(ctx, "hello from FastHTTP"); err != nil {

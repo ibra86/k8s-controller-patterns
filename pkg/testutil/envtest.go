@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	frontendv1alpha1 "github.com/ibra86/k8s-controller-patterns/pkg/apis/frontend/v1alpha1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"github.com/stretchr/testify/require"
@@ -103,12 +104,15 @@ func StartTestManager(t *testing.T) (
 	testScheme := runtime.NewScheme()
 
 	require.NoError(t, scheme.AddToScheme(testScheme))
+	require.NoError(t, frontendv1alpha1.AddToScheme(testScheme))
+	metav1.AddToGroupVersion(testScheme, frontendv1alpha1.SchemeGroupVersion)
 	require.NoError(t, apiextensionsv1.AddToScheme(testScheme))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	env := &envtest.Environment{
+		CRDDirectoryPaths:        []string{"../../config/crd"},
 		ErrorIfCRDPathMissing:    true,
 		AttachControlPlaneOutput: false,
 	}

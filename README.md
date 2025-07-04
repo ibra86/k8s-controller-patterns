@@ -1,4 +1,65 @@
-# k8s-controller-patterns
+# Kubernetes Controllers Development Pattern
+
+![visitors](https://visitor-badge.laobi.icu/badge?page_id=ibra86.k8s-controller-patterns)
+![Go Reference](https://img.shields.io/badge/go-reference-blue?logo=go)
+![Build](https://github.com/ibra86/k8s-controller-patterns/actions/workflows/ci.yml/badge.svg)
+![Repo Size](https://img.shields.io/github/repo-size/ibra86/k8s-controller-patterns)
+![Last Commit](https://img.shields.io/github/last-commit/ibra86/k8s-controller-patterns)
+
+## About
+
+A lightweight Kubernetes controller project built in Go, enabling interaction with Kubernetes resources through a custom HTTP API and Kubernetes-native reconciliation logic.
+
+This project demonstrates advanced controller patterns including:
+
+- Dynamic reconciliation with `controller-runtime`
+- Custom Resource Definitions (CRDs) via `controller-gen`
+- Integration with `client-go` for listing and watching resources
+- HTTP-based API server for interacting with cluster state
+- CI/CD-ready container image builds and Helm-based deployments
+
+---
+
+## Project Structure
+
+```text
+k8s-controller-patterns/
+├── cmd/                           # CLI commands and application entry points
+│   ├── root.go                    # Root command with logging configuration
+│   └── server.go                  # HTTP server command
+│
+├── config/
+│   └── crd/                       # Custom Resource Definitions
+│       └── frontendpage.yaml
+│
+├── pkg/                           # Core packages
+│   ├── apis/
+│   │   └── frontend/v1alpha1/     # API version for FrontendPage
+│   │       ├── groupversion_info.go
+│   │       └─- resource.go
+│   │
+│   ├── ctrl/                      # Controller logic
+│   │   ├── deployment_controller.go
+│   │   └── frontendpage_controller.go
+│   │
+│   ├── informer/                  # Dynamic informer implementation
+│   └── testutil/                  # Testing utilities with envtest support
+│
+└── charts/                        # Helm chart for deployment
+```
+
+---
+
+## Prerequisites
+
+- Go 1.24.0 or later
+- Kubernetes cluster
+- Docker
+- Helm 3.x
+
+---
+
+## Steps of implementations
 
 #### 0. Set-up control plane in Codespace via script
 ```bash
@@ -86,4 +147,21 @@ curl http://localhost:8080/deployments
 ```bash
 # deployment reconciliation and leader-election
 go run main.go server --log-level trace --kubeconfig ~/.kube/config --enable-leader-election=false --metrics-port=9090
+```
+
+#### 4. frontend-page controller
+```bash
+# install controller-gen -- tool to generate CRD and deepcopy code
+go install sigs.k8s.io/controller-tools/cmd/controller-gen@latest
+
+controller-gen crd:crdVersions=v1 paths=./pkg/apis/... output:crd:dir=./config/crd object paths=./pkg/apis/...
+# create CRD
+kubectl port-forward service/k8s-controllers 8080:80& # temp fwd port to a pod
+apply -f config/crd/frontendpage.ibra86.io_frontendpages.yaml
+go run main.go --log-level trace --kubeconfig  ~/.kube/config server
+kubectl apply -f ./config/crd/frontendpage.yaml
+
+kubectl patch frontendpage testpage --type=merge -p '{"spec": {"replicas": 3}}'
+kubectl scale --replicas=2 deployment/testpage # not be applied - according to the state of reconcile.loop
+kubectl delete deploy testpage   # won't be applied
 ```
