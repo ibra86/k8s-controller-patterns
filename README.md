@@ -179,4 +179,7 @@ kubectl delete deploy testpage   # won't be applied
 
 # swagger
 curl http://localhost:8080/swagger/index.html
+
+# enabling MCP server
+go run main.go server --log-level trace --kubeconfig  ~/.kube/config --enable-mcp
 ```

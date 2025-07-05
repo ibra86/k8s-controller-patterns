@@ -18,6 +18,8 @@ type FrontendPageAPI struct {
 	Namespace string
 }
 
+var FrontendAPI *FrontendPageAPI // a shared instance for use by HTTP and MCP handlers
+
 // @Description FrontendPage resource (Swagger only)
 type FrontendPageDoc struct {
 	Name     string `json:"name" example:"example-page"`
@@ -31,6 +33,24 @@ type FrontendPageListDoc struct {
 	Items []FrontendPageDoc `json:"items"`
 }
 
+func (api *FrontendPageAPI) ListFrontendPagesRaw(ctx context.Context) ([]FrontendPageDoc, error) {
+	list := &frontendv1alpha1.FrontendPageList{}
+	err := api.K8sClient.List(context.Background(), list, client.InNamespace(api.Namespace))
+	if err != nil {
+		return nil, err
+	}
+	docs := make([]FrontendPageDoc, 0, len(list.Items))
+	for _, item := range list.Items {
+		docs = append(docs, FrontendPageDoc{
+			Name: item.Name,
+			Contents: item.Spec.Contents,
+			Image: item.Spec.Image,
+			Replicas: item.Spec.Replicas,
+		})
+	}
+	return docs, nil
+}
+
 // ListFrontendPages godoc
 // @Summary List all FrontendPages
 // @Description Get all FrontendPage resources
@@ -39,15 +59,15 @@ type FrontendPageListDoc struct {
 // @Success 200 {object} FrontendPageListDoc
 // @Router /api/frontendpages [get]
 func (api *FrontendPageAPI) ListFrontendPages(ctx *fasthttp.RequestCtx) {
-	list := &frontendv1alpha1.FrontendPageList{}
-	err := api.K8sClient.List(context.Background(), list, client.InNamespace(api.Namespace))
+	docs, err := api.ListFrontendPagesRaw(context.Background())
 	if err != nil {
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		ctx.SetBodyString(fmt.Sprintf(`{"error":"%v"}`, err))
 		return
 	}
 	ctx.SetContentType("application/json")
-	if err := json.NewEncoder(ctx).Encode(list.Items); err != nil {
+	err = json.NewEncoder(ctx).Encode(FrontendPageListDoc{Items: docs})
+	if err != nil {
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		ctx.SetBodyString(`{"error": "failed to encode JSON"}`)
 		return
@@ -83,7 +103,8 @@ func (api *FrontendPageAPI) GetFrontendPage(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	ctx.SetContentType("application/json")
-	if err := json.NewEncoder(ctx).Encode(obj); err != nil {
+	err = json.NewEncoder(ctx).Encode(obj); 
+	if err != nil {
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		ctx.SetBodyString(`{"error": "failed to encode JSON"}`)
 		return
@@ -100,6 +121,7 @@ func (api *FrontendPageAPI) GetFrontendPage(ctx *fasthttp.RequestCtx) {
 // @Success 201 {object} FrontendPageDoc
 // @Failure 404 {object} map[string]string
 // @Router /api/frontendpages [post]
+
 func (api *FrontendPageAPI) CreateFrontendPage(ctx *fasthttp.RequestCtx) {
 	obj := &frontendv1alpha1.FrontendPage{}
 	if err := json.Unmarshal(ctx.PostBody(), obj); err != nil {
@@ -116,7 +138,8 @@ func (api *FrontendPageAPI) CreateFrontendPage(ctx *fasthttp.RequestCtx) {
 	}
 	ctx.SetStatusCode(fasthttp.StatusCreated)
 	ctx.SetContentType("application/json")
-	if err := json.NewEncoder(ctx).Encode(obj); err != nil {
+	err := json.NewEncoder(ctx).Encode(obj)
+	if err != nil {
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		ctx.SetBodyString(`{"error": "failed to encode JSON"}`)
 		return
@@ -171,7 +194,8 @@ func (api *FrontendPageAPI) UpdateFrontendPage(ctx *fasthttp.RequestCtx) {
 	}
 
 	ctx.SetContentType("application/json")
-	if err := json.NewEncoder(ctx).Encode(existing); err != nil {
+	err = json.NewEncoder(ctx).Encode(existing)
+	if err != nil {
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		ctx.SetBodyString(`{"error": "failed to encode JSON"}`)
 		return
@@ -201,7 +225,8 @@ func (api *FrontendPageAPI) DeleteFrontendPage(ctx *fasthttp.RequestCtx) {
 		},
 	}
 
-	if err := api.K8sClient.Delete(context.Background(), obj); err != nil {
+	err := api.K8sClient.Delete(context.Background(), obj)
+	if err != nil {
 		ctx.SetStatusCode(fasthttp.StatusNotFound)
 		ctx.SetBodyString(fmt.Sprintf(`{"error": "%v"}`, err))
 		return
