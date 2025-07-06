@@ -24,28 +24,28 @@ This project demonstrates advanced controller patterns including:
 
 ```text
 k8s-controller-patterns/
-├── cmd/                           # CLI commands and application entry points
-│   ├── root.go                    # Root command with logging configuration
-│   └── server.go                  # HTTP server command
-│
-├── config/
-│   └── crd/                       # Custom Resource Definitions
-│       └── frontendpage.yaml
+├── cmd/                           # CLI commands
+│   ├── goBasic.go, list.go        # Basic and list commands
+│   ├── mcp.go, server.go          # MCP + API server commands
+│   └── *_test.go                  # Tests
 │
 ├── pkg/                           # Core packages
-│   ├── apis/
-│   │   └── frontend/v1alpha1/     # API version for FrontendPage
-│   │       ├── groupversion_info.go
-│   │       └─- resource.go
-│   │
-│   ├── ctrl/                      # Controller logic
-│   │   ├── deployment_controller.go
-│   │   └── frontendpage_controller.go
-│   │
-│   ├── informer/                  # Dynamic informer implementation
-│   └── testutil/                  # Testing utilities with envtest support
+│   ├── api/                       # HTTP API and JWT middleware
+│   ├── apis/frontend/v1alpha1/    # CRD definitions
+│   ├── ctrl/                      # Reconciler logic
+│   ├── informer/                  # Shared informers
+│   └── testutil/                  # envtest helpers
 │
-└── charts/                        # Helm chart for deployment
+├── config/crd/                    # CRD YAMLs
+│
+├── charts/app/                    # Helm chart
+│
+├── docs/                          # Swagger specs + Images
+│
+├── setup-amd64.sh                # Local control plane setup script
+├── Makefile, Dockerfile          # Build definitions
+├── main.go                       # CLI entrypoint
+├── .github/workflows             # CI/CD GitHub Actions
 ```
 
 ---
@@ -69,7 +69,7 @@ k8s-controller-patterns/
 ./setup-amd64.sh cleanup
 ```
 
-#### 1. Add go basics + test
+#### 1. Set-up control plane via script
 
 ```bash
 go run main.go go-basic
@@ -87,14 +87,13 @@ go build -o controller
 ./controller --log-level trace
 ```
 
-#### 2. Add FastHTTP server
+#### 3. Add FastHTTP server
 
 ```bash
-go build -o controller
-./controller server --log-level debug
+go run main.go server --log-level trace
 ```
 
-#### 3. Add CI-CD
+#### 4. Add CI-CD
 
 ```bash
 make run #default run
@@ -138,7 +137,7 @@ kubectl port-forward service/k8s-controllers 8080:80& # temp fwd port to a pod
 curl http://localhost:8080
 ```
 
-#### 4. client-go api
+#### 5. Add client-go integration
 
 ```bash
 # list deployments
@@ -152,14 +151,7 @@ go run main.go list --log-level debug --kubeconfig ~/.kube/config --log-level
 curl http://localhost:8080/deployments
 ```
 
-#### 5. controller-runtime manager and controller
-
-```bash
-# deployment reconciliation and leader-election
-go run main.go server --log-level trace --kubeconfig ~/.kube/config --enable-leader-election=false --metrics-port=9090
-```
-
-#### 6. frontend-page controller
+#### 6. Add controller-runtime + CRDs
 
 ```bash
 # install controller-gen -- tool to generate CRD and deepcopy code
@@ -176,16 +168,29 @@ kubectl apply -f ./config/crd/frontendpage.yaml
 kubectl patch frontendpage testpage --type=merge -p '{"spec": {"replicas": 3}}'
 kubectl scale --replicas=2 deployment/testpage # not be applied - according to the state of reconcile.loop
 kubectl delete deploy testpage   # won't be applied
+```
 
-# swagger
+#### 7. Swagger UI
+
+```bash
 curl http://localhost:8080/swagger/index.html
+```
 
-# enabling MCP server
+#### 7. Enable MCP Server (for Chat/Agent integrations)
+
+```bash
 go run main.go server --log-level trace --kubeconfig  ~/.kube/config --enable-mcp
-# connect to IDE Agent - e.g. https://docs.cursor.com/context/mcp#using-mcp-json
-# ask question - e.g. 'use mcp. give me frontend pages'
+# MCP is now exposed on port 9090 (default)
+# Connect from IDE (e.g., Cursor - https://docs.cursor.com/context/mcp#using-mcp-json)
+# -> ask: "Use MCP. Give me frontend pages."
+```
 
-# enabling JWT auth
+Below is an example of the MCP server returning `frontendpages` via chat agent integration:
+![MCP FrontendPages Response](docs/images/mcp-frontendpages.png)
+
+#### 8. Enable JWT Auth (for secure API access)
+
+```bash
 go run main.go server --log-level trace --kubeconfig  ~/.kube/config --enable-leader-election=0 --jwt-secret "my-secret"
 TOKEN=$(curl -s -X POST http://localhost:8080/api/token | jq -r .token)
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/frontendpages
