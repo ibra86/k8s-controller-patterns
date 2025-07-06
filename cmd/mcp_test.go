@@ -3,12 +3,13 @@ package cmd
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/ibra86/k8s-controller-patterns/pkg/api"
 	frontendv1alpha1 "github.com/ibra86/k8s-controller-patterns/pkg/apis/frontend/v1alpha1"
 	"github.com/ibra86/k8s-controller-patterns/pkg/ctrl"
 	"github.com/ibra86/k8s-controller-patterns/pkg/testutil"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -21,7 +22,7 @@ func setupTestAPIWithManager(t *testing.T) (*api.FrontendPageAPI, client.Client,
 		_ = mgr.Start(ctx)
 	}()
 
-	if ok:= mgr.GetCache().WaitForCacheSync(ctx); !ok {
+	if ok := mgr.GetCache().WaitForCacheSync(ctx); !ok {
 		cancel()
 		t.Fatal("cache did not sync")
 	}
@@ -30,14 +31,14 @@ func setupTestAPIWithManager(t *testing.T) (*api.FrontendPageAPI, client.Client,
 		K8sClient: k8sClient,
 		Namespace: "default",
 	}
-	return apiInst, k8sClient, func(){ 
-		cancel() 
+	return apiInst, k8sClient, func() {
+		cancel()
 		cleanup()
 	}
 
 }
 
-func TestMCP_ListFrontendPagesHandler(t *testing.T){
+func TestMCP_ListFrontendPagesHandler(t *testing.T) {
 	apiInst, k8sClient, cleanup := setupTestAPIWithManager(t)
 	defer cleanup()
 	api.FrontendAPI = apiInst
@@ -45,29 +46,31 @@ func TestMCP_ListFrontendPagesHandler(t *testing.T){
 	// create frontend resources
 	page1 := &frontendv1alpha1.FrontendPage{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "mcp-page1",
+			Name:      "mcp-page1",
 			Namespace: "default",
 		},
 		Spec: frontendv1alpha1.FrontendPageSpec{
 			Contents: "<h1>MCP Page-1</h1>",
-			Image: "nginx:1.21",
+			Image:    "nginx:1.21",
 			Replicas: 1,
 		},
 	}
 	page2 := &frontendv1alpha1.FrontendPage{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "mcp-page2",
+			Name:      "mcp-page2",
 			Namespace: "default",
 		},
 		Spec: frontendv1alpha1.FrontendPageSpec{
 			Contents: "<h1>MCP Page-2</h1>",
-			Image: "nginx:1.22",
+			Image:    "nginx:1.22",
 			Replicas: 1,
 		},
 	}
-	
+
 	require.NoError(t, k8sClient.Create(context.Background(), page1))
 	require.NoError(t, k8sClient.Create(context.Background(), page2))
+
+	time.Sleep(5 * time.Second) // naive wait for controller to reconcile
 
 	docs, err := api.FrontendAPI.ListFrontendPagesRaw(context.Background())
 	require.NoError(t, err)
