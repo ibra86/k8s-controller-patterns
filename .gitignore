@@ -1,6 +1,6 @@
 etcd
 kubebuilder
-.vscode
+# .vscode
 controller
 secret.yaml
 charts/app/.helmignore

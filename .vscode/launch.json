@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug server",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto", // or "debug"
+      "program": "${workspaceFolder}/main.go",
+      "args": [
+        "server",
+        "--log-level",
+        "trace",
+        "--kubeconfig",
+        "/home/codespace/.kube/config",
+        "--enable-mcp"
+      ],
+      "env": {},
+      "showLog": true,
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

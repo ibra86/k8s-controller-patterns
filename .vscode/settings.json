@@ -1,0 +1,13 @@
+{
+  "go.toolsEnvVars": {
+    "GO111MODULE": "on"
+  },
+  "go.lintTool": "golangci-lint",
+  "go.testFlags": ["-v", "-timeout=30s"],
+  "go.useLanguageServer": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "makefile.configureOnOpen": false
+}
