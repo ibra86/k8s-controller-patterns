@@ -4,7 +4,7 @@ GOARCH ?= amd64
 VERSION ?= $(sell git describe --tags --always --dirty)
 BUILD_FLAGS = -v -o $(APP) -ldflags "-X=github.com/ibra86/$(APP)/cmd.appVersion=$(VERSION)"
 ARGS ?=
-CRD_PATH=$(pwd)/config/crd
+CRD_PATH = $(shell pwd)/config/crd
 
 
 .PHONY: all build test run docker-build clean

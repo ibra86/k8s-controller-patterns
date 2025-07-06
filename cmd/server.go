@@ -40,6 +40,7 @@ var metricsPort int
 var enableMCP bool
 var mcpPort int
 var FrontendAPI *api.FrontendPageAPI
+var jwtSecret string
 
 func getServerKubeClient(kubeconfigPath string, inCluster bool) (*kubernetes.Clientset, error) {
 	var config *rest.Config
@@ -118,6 +119,7 @@ var serverCmd = &cobra.Command{
 
 		// API router
 		router := fasthttprouter.New()
+		router.POST("/api/token", api.TokenHandler)
 		frontendAPI := &api.FrontendPageAPI{
 			K8sClient: mgr.GetClient(),
 			Namespace: "default",
@@ -125,11 +127,11 @@ var serverCmd = &cobra.Command{
 		router.GET("/", func(ctx *fasthttp.RequestCtx) {
 			_, _ = fmt.Fprintf(ctx, "hello from FastHTTP")
 		})
-		router.GET("/api/frontendpages", frontendAPI.ListFrontendPages)
-		router.POST("/api/frontendpages", frontendAPI.CreateFrontendPage)
-		router.GET("/api/frontendpages/:name", frontendAPI.GetFrontendPage)
-		router.PUT("/api/frontendpages/:name", frontendAPI.UpdateFrontendPage)
-		router.DELETE("/api/frontendpages/:name", frontendAPI.DeleteFrontendPage)
+		router.GET("/api/frontendpages", api.JWTMiddleware(frontendAPI.ListFrontendPages))
+		router.POST("/api/frontendpages", api.JWTMiddleware(frontendAPI.CreateFrontendPage))
+		router.GET("/api/frontendpages/:name", api.JWTMiddleware(frontendAPI.GetFrontendPage))
+		router.PUT("/api/frontendpages/:name", api.JWTMiddleware(frontendAPI.UpdateFrontendPage))
+		router.DELETE("/api/frontendpages/:name", api.JWTMiddleware(frontendAPI.DeleteFrontendPage))
 
 		router.GET(
 			"/swagger/*any",
@@ -159,6 +161,8 @@ var serverCmd = &cobra.Command{
 			_, _ = ctx.Write([]byte("]"))
 		}
 		router.GET("/deployments", handler)
+
+		api.JWTSecret = jwtSecret
 
 		if enableMCP {
 			go func() {
@@ -198,4 +202,5 @@ func init() {
 	serverCmd.Flags().IntVar(&metricsPort, "metrics-port", 8081, "Port for controller manager metrics")
 	serverCmd.Flags().BoolVar(&enableMCP, "enable-mcp", false, "Enable MCP server")
 	serverCmd.Flags().IntVar(&mcpPort, "mcp-port", 9090, "Port for MCP server")
+	serverCmd.Flags().StringVar(&jwtSecret, "jwt-secret", "", "Secret key for signing JWT tokens (required)")
 }
