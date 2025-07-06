@@ -11,6 +11,7 @@ import (
 	"github.com/ibra86/k8s-controller-patterns/pkg/api"
 	"github.com/ibra86/k8s-controller-patterns/pkg/ctrl"
 	"github.com/ibra86/k8s-controller-patterns/pkg/informer"
+	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -36,6 +37,9 @@ var serverInCluster bool
 var enableLeaderElection bool
 var leaderElectionNamespace string
 var metricsPort int
+var enableMCP bool
+var mcpPort int
+var FrontendAPI *api.FrontendPageAPI
 
 func getServerKubeClient(kubeconfigPath string, inCluster bool) (*kubernetes.Clientset, error) {
 	var config *rest.Config
@@ -118,6 +122,8 @@ var serverCmd = &cobra.Command{
 			K8sClient: mgr.GetClient(),
 			Namespace: "default",
 		}
+		api.FrontendAPI = frontendAPI
+
 		router.GET("/", func(ctx *fasthttp.RequestCtx) {
 			_, _ = fmt.Fprintf(ctx, "hello from FastHTTP")
 		})
@@ -156,6 +162,24 @@ var serverCmd = &cobra.Command{
 		}
 		router.GET("/deployments", handler)
 
+		if enableMCP {
+			go func() {
+				mcpServer := NewMCPServer("K8s Controller MCP", appVersion)
+				sseAddr := fmt.Sprintf("http://:%d", mcpPort)
+				// sseAddr := fmt.Sprintf("http://localhost:%d", mcpPort)
+				sseServer := mcpserver.NewSSEServer(
+					mcpServer,
+					mcpserver.WithBaseURL(sseAddr),
+				)
+				log.Info().Msgf("Starting MCP server in SSE mode: %s", sseAddr)
+				if err := sseServer.Start(fmt.Sprintf(":%d", mcpPort)); err != nil {
+					log.Fatal().Err(err).Msg("MCP SSE server error")
+				}
+			}()
+			log.Info().Msgf("MCP server is ready on port %d", mcpPort)
+
+		}
+
 		addr := fmt.Sprintf(":%d", serverPort)
 		log.Info().Msgf("Starting FastHTTP server on %s (version: %s)", addr, appVersion)
 
@@ -174,4 +198,6 @@ func init() {
 	serverCmd.Flags().BoolVar(&enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager")
 	serverCmd.Flags().StringVar(&leaderElectionNamespace, "leader-election-namespace", "default", "Namespace for leader election")
 	serverCmd.Flags().IntVar(&metricsPort, "metrics-port", 8081, "Port for controller manager metrics")
+	serverCmd.Flags().BoolVar(&enableMCP, "enable-mcp", false, "Enable MCP server")
+	serverCmd.Flags().IntVar(&mcpPort, "mcp-port", 9090, "Port for MCP server")
 }

@@ -3,7 +3,8 @@ GOOS ?= linux
 GOARCH ?= amd64
 VERSION ?= $(sell git describe --tags --always --dirty)
 BUILD_FLAGS = -v -o $(APP) -ldflags "-X=github.com/ibra86/$(APP)/cmd.appVersion=$(VERSION)"
-ARGS ?= 
+ARGS ?=
+CRD_PATH=$(pwd)/config/crd
 
 
 .PHONY: all build test run docker-build clean
@@ -14,10 +15,11 @@ build:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build $(BUILD_FLAGS) main.go
 
 test-ci:
-	go test -v -p 1 ./...
+	echo "Using CRD_PATH=${CRD_PATH_GW}"
+	CRD_PATH=${CRD_PATH_GW} go test -v -p 1 ./...
 
 test:
-	go test ./...
+	CRD_PATH=${CRD_PATH} go test ./...
 vet:
 	go vet ./...
 lint:
