@@ -112,7 +112,7 @@ func StartTestManager(t *testing.T) (
 	defer cancel()
 
 	env := &envtest.Environment{
-		CRDDirectoryPaths:        []string{"../../config/crd"},
+		CRDDirectoryPaths:        []string{os.Getenv("CRD_PATH")},
 		ErrorIfCRDPathMissing:    true,
 		AttachControlPlaneOutput: false,
 	}

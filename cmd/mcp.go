@@ -52,7 +52,7 @@ func NewMCPServer(serverName, version string) *server.MCPServer {
 		mcp.WithString("replicas", mcp.Description("Number of replicas")),
 	)
 	// TODO: update, delete
-
+	fmt.Println("[MCP] Registering tool:", listTool.Name)
 	s.AddTool(listTool, listFrontendPagesHandler)
 	s.AddTool(createTool, createFrontendPageHandler)
 	return s

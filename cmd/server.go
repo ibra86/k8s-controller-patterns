@@ -163,11 +163,13 @@ var serverCmd = &cobra.Command{
 		if enableMCP {
 			go func() {
 				mcpServer := NewMCPServer("K8s Controller MCP", appVersion)
+				sseAddr := fmt.Sprintf("http://:%d", mcpPort)
+				// sseAddr := fmt.Sprintf("http://localhost:%d", mcpPort)
 				sseServer := mcpserver.NewSSEServer(
 					mcpServer,
-					mcpserver.WithBaseURL(fmt.Sprintf("http://:%d", mcpPort)),
+					mcpserver.WithBaseURL(sseAddr),
 				)
-				log.Info().Msgf("Starting MCP server in SSE mode on port %d", mcpPort)
+				log.Info().Msgf("Starting MCP server in SSE mode: %s", sseAddr)
 				if err := sseServer.Start(fmt.Sprintf(":%d", mcpPort)); err != nil {
 					log.Fatal().Err(err).Msg("MCP SSE server error")
 				}

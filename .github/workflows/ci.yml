@@ -54,7 +54,9 @@ jobs:
         with:
           go-version: "1.24.2"
 
-      - name: Run Go tests
+      - name: Run Go       
+        env:
+          CRD_PATH: ${{ github.workspace }}/config/crd
         run: go test ./cmd
   build:
     name: Build App
@@ -93,6 +95,8 @@ jobs:
       - name: Build
         run: make build
       - name: Test
+        env:
+          CRD_PATH_GW: ${{ github.workspace }}/config/crd
         run: make test-ci
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
