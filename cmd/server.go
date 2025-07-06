@@ -124,6 +124,8 @@ var serverCmd = &cobra.Command{
 			K8sClient: mgr.GetClient(),
 			Namespace: "default",
 		}
+		api.FrontendAPI = frontendAPI
+
 		router.GET("/", func(ctx *fasthttp.RequestCtx) {
 			_, _ = fmt.Fprintf(ctx, "hello from FastHTTP")
 		})

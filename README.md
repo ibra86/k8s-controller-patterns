@@ -182,4 +182,11 @@ curl http://localhost:8080/swagger/index.html
 
 # enabling MCP server
 go run main.go server --log-level trace --kubeconfig  ~/.kube/config --enable-mcp
+# connect to IDE Agent - e.g. https://docs.cursor.com/context/mcp#using-mcp-json
+# ask question - e.g. 'use mcp. give me frontend pages'
+
+# enabling JWT auth
+go run main.go server --log-level trace --kubeconfig  ~/.kube/config --enable-leader-election=0 --jwt-secret "my-secret"
+TOKEN=$(curl -s -X POST http://localhost:8080/api/token | jq -r .token)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/frontendpages
 ```
