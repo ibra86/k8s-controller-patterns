@@ -11,16 +11,6 @@ on:
       - "cmd/**"
       - "pkg/**"
       - ".github/workflows/ci.yml"
-  # pull_request:
-  #   branches: [ "main", "feature/**", "day*/**" ]
-  #   paths:
-  #     - '**.go'
-  #     - '**.mod'
-  #     - '**.sum'
-  #     - 'charts/**'
-  #     - 'cmd/**'
-  #     - 'pkg/**'
-  #     - '.github/workflows/ci.yml'
 
 jobs:
   lint:
